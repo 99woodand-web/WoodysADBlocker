@@ -1,3 +1,7 @@
+============================================================
+  RUST DNS FIREWALL
+  Your own DNS ad/malware blocker
+============================================================
 
 WHAT IT DOES
 ------------
@@ -11,7 +15,13 @@ STARTING THE APP
 1. Double-click rust_dns_firewall.exe.
 2. Approve the Windows UAC prompt. Administrator permission is
    required to bind port 53 and change the adapter DNS settings.
-3. The compact control panel opens after the blocklist loads.
+3. The compact control panel opens (centred on your main
+   screen) after the blocklist loads.
+
+The app runs as a single instance. Launching the EXE again
+while it is already running does not start a second copy: it
+reopens the panel window and shows an "Already running"
+notification.
 
 No command window is required. This is a standalone executable;
 there is no need to run cargo, open a terminal, or use a .bat
@@ -35,6 +45,8 @@ The compact panel is the quick day-to-day control surface:
   It turns protection off, restores DNS and exits the process.
 - Closing the panel window only hides it; protection continues
   running in the background.
+- The dashboard address at the bottom opens the full dashboard
+  in your default web browser.
 
 The compact panel intentionally does not show Recent blocks or
 Tools. Open the full dashboard for those features.
@@ -49,6 +61,16 @@ The dashboard provides detailed health information, warnings,
 daily statistics, recent blocked requests, allowlist management,
 domain checking and the full set of controls.
 
+It also includes:
+
+- Block history: every blocked domain across the retained days
+  (up to 30). Click a column heading to sort, use the filter
+  box to narrow by domain, pick a day range (7 days / 30 days /
+  all), and use Export CSV to download the full history as
+  dns_block_history.csv.
+- Refresh blocklist: re-downloads the current blocklist feed
+  immediately instead of waiting for the automatic refresh.
+
 BLOCKING MODES
 --------------
 - Malware + ads/tracking (default): uses the full StevenBlack
@@ -57,23 +79,46 @@ BLOCKING MODES
   blocking most advertising and tracking domains.
 
 Changing mode downloads the selected blocklist before applying
-it. The selected mode is saved for the next launch.
+it. The selected mode is saved for the next launch, and the
+automatic refresh always re-downloads the currently selected
+feed.
+
+OPTIONAL CONFIG FILE
+--------------------
+Create firewall_config.json beside the executable to customise
+the blocklist sources and refresh interval. Every field is
+optional; if the file is missing or invalid, the defaults are
+used.
+
+  {
+    "privacy_blocklist_url": "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
+    "malware_blocklist_url": "https://urlhaus.abuse.ch/downloads/hostfile/",
+    "refresh_interval_secs": 3600
+  }
+
+refresh_interval_secs is clamped to a minimum of 300 seconds
+(5 minutes).
 
 CUSTOM ICON
 -----------
-This single-file package contains the custom application icon
-and panel logo that were present when it was built. No assets
-folder is required.
+The standalone EXE contains the custom application icon and
+panel logo that were present when it was built. A separate
+assets folder is not required by the single-file package.
 
 LOGS AND DATA
 -------------
 The app stores these files beside the executable:
 
-- dns_blocks.log     Timestamped blocked-domain log
+- dns_blocks.log     Timestamped blocked-domain log. It rotates
+                     automatically at 5 MB into
+                     dns_blocks.log.1 (one previous generation
+                     is kept), so it cannot grow indefinitely.
 - dns_stats.json     Daily statistics for the last 30 days
 - dns_allowlist.txt  Domains exempt from blocking
 - blocking_mode.txt  The selected blocking mode
-- dns_settings_backup.json  Temporary adapter DNS backup while protection is on
+- firewall_config.json  Optional custom settings (see above)
+- dns_settings_backup.json  Temporary adapter DNS backup while
+                     protection is on
 
 TROUBLESHOOTING
 ---------------
@@ -103,9 +148,11 @@ If the app cannot start, verify that:
   compact panel. The DNS service can still be checked through
   the browser dashboard if the native panel cannot open.
 
-The app actively checks upstream DNS health in the background and
-shows warnings in both the compact panel and the dashboard when
-an upstream resolver or blocklist download is unavailable.
+The app actively checks upstream DNS health in the background
+(every 20 seconds) and shows warnings in both the compact panel
+and the dashboard when an upstream resolver or blocklist
+download is unavailable. Warnings clear automatically as soon
+as health recovers.
 
 START WITH WINDOWS
 ------------------
