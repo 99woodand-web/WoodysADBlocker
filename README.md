@@ -1,10 +1,6 @@
 # WoodysADBlocker
 My homemade AD blocker 
 
-============================================================
-  RUST DNS FIREWALL
-  Your own DNS ad/malware blocker
-============================================================
 
 WHAT IT DOES
 ------------
