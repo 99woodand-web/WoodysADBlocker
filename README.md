@@ -1,7 +1,4 @@
-============================================================
-  RUST DNS FIREWALL
-  Your own DNS ad/malware blocker
-============================================================
+Woodys AD Blocker
 
 WHAT IT DOES
 ------------
