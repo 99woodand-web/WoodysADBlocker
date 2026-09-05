@@ -1,79 +1,118 @@
-# WoodysADBlocker
-My homemade AD blocker 
-
 
 WHAT IT DOES
 ------------
-Blocks malware, ad and tracking domains at the DNS level for
-the active Windows network adapter. Runs as a local DNS
-server (127.0.0.1) and forwards allowed queries securely via
-DNS-over-HTTPS, so it works even on networks that interfere
-with normal DNS.
+Blocks malware, advertising and tracking domains at the DNS
+level for the active Windows network adapter. It runs a local
+DNS server on 127.0.0.1 and forwards allowed queries securely
+through DNS-over-HTTPS.
 
-STARTING IT
------------
-1. Double-click start.bat
-2. Click "Yes" on the Windows UAC prompt (admin is required
-   to bind port 53 and change your DNS settings)
-3. The control window opens within a second or two
+STARTING THE APP
+----------------
+1. Double-click rust_dns_firewall.exe.
+2. Approve the Windows UAC prompt. Administrator permission is
+   required to bind port 53 and change the adapter DNS settings.
+3. The compact control panel opens after the blocklist loads.
 
-   - Toggle "Protection ON" to start blocking
-   - The window can be closed; protection keeps running
-   - Double-click start.bat again later to re-open the window
-   - To stop the app completely, click "Quit firewall" in the
-     panel (or "Quit" on the dashboard) - it turns protection
-     off, restores your DNS and exits. Closing the window only
-     hides it; it does NOT stop the firewall
+No command window is required. This is a standalone executable;
+there is no need to run cargo, open a terminal, or use a .bat
+launcher.
 
-NOTE: this app never shows a console/command window - it runs
-as a normal Windows program with only the small control panel
-window (fixed 400x620 size). Starting it from a terminal
-(cargo run, the exe path, etc.) also produces no text output.
-If you want to see the live block stream, watch dns_blocks.log
-or the dashboard instead (see below).
-
-USING THE CONTROL PANEL
+USING THE COMPACT PANEL
 -----------------------
-The small window has everything day-to-day: the on/off
-toggle, Restore DNS, Mute alerts, Clear stats, blocking
-mode, blocked-today stats and recent blocks. For the full
-dashboard (7-day chart, allowlist, domain checker) open
-http://127.0.0.1:7878 in a browser while the app is running.
+The compact panel is the quick day-to-day control surface:
 
-KEY DETAILS
+- Use the Protection switch to turn blocking on or off.
+- The switch shows "Starting..." or "Stopping..." while the
+  operation is being completed, so it does not appear to move
+  back and forth during the DNS change.
+- Restore DNS returns the adapter to its saved DNS settings or
+  automatic DHCP DNS when no backup is available.
+- Mute alerts disables the Windows blocked-domain notifications.
+- Clear stats resets the current blocked-request counter.
+- "Blocked today" gives a quick reference count and chart.
+- The blocking mode defaults to "Malware + ads/tracking".
+- The X in the top-right quits the firewall after confirmation.
+  It turns protection off, restores DNS and exits the process.
+- Closing the panel window only hides it; protection continues
+  running in the background.
+
+The compact panel intentionally does not show Recent blocks or
+Tools. Open the full dashboard for those features.
+
+FULL DASHBOARD
+--------------
+While the app is running, open:
+
+  http://127.0.0.1:7878
+
+The dashboard provides detailed health information, warnings,
+daily statistics, recent blocked requests, allowlist management,
+domain checking and the full set of controls.
+
+BLOCKING MODES
+--------------
+- Malware + ads/tracking (default): uses the full StevenBlack
+  list, containing approximately 80,000 domains.
+- Malware only: uses the safer malware-focused feed and avoids
+  blocking most advertising and tracking domains.
+
+Changing mode downloads the selected blocklist before applying
+it. The selected mode is saved for the next launch.
+
+CUSTOM ICON
 -----------
-- Blocking modes: "Malware only" (safer default) and
-  "Malware + ads/tracking" (full list, ~80k domains)
-- Allowlist: domains you allow are never blocked, even if
-  a list catches them (use the dashboard's Allowlist tools)
-- Your custom icon: replace assets/app-icon.png with your
-  own image (PNG recommended, transparency supported) and
-  rebuild. The panel logo also updates live - just refresh.
-- Blocked requests are logged to dns_blocks.log
-- Daily stats are kept in dns_stats.json (last 30 days)
-- Crash recovery: if a previous run left the adapter DNS pointed at
-  127.0.0.1, the app repairs it automatically at startup - saved DNS is
-  restored if a backup exists, otherwise it resets to automatic (DHCP) DNS
+This single-file package contains the custom application icon
+and panel logo that were present when it was built. No assets
+folder is required.
 
-IF SOMETHING GOES WRONG
------------------------
-There is no console output anymore, so check these in order:
+LOGS AND DATA
+-------------
+The app stores these files beside the executable:
 
-1. The panel window and the dashboard at
-   http://127.0.0.1:7878 show live health: protection state,
-   adapter, port 53 listener, DNS health, blocklist size
-   and blocked counts. Open them first.
-2. Blocked domains are logged to dns_blocks.log (with
-timestamps) - open it in Notepad to see recent activity.
-3. Daily stats live in dns_stats.json (last 30 days).
-4. Click "Restore DNS" in the window to put your adapter
-   DNS back to normal.
-5. From an admin PowerShell you can also run:
-     Set-DnsClientServerAddress -InterfaceAlias "WiFi" -ResetServerAddresses
-6. If you can't start the app at all, check that nothing
-   else is already using port 53 (other DNS tools) and that
-   you approved the UAC prompt.
+- dns_blocks.log     Timestamped blocked-domain log
+- dns_stats.json     Daily statistics for the last 30 days
+- dns_allowlist.txt  Domains exempt from blocking
+- blocking_mode.txt  The selected blocking mode
+- dns_settings_backup.json  Temporary adapter DNS backup while protection is on
 
-TIP: to make the app start with Windows, create a shortcut
-to start.bat and drop it in the Startup folder:
+TROUBLESHOOTING
+---------------
+There is no console window. Check the compact panel or the full
+dashboard first. They show protection state, adapter details,
+port 53 status, DNS health, blocklist size and live warnings.
+
+If websites stop loading:
+
+1. Click Restore DNS in the compact panel.
+2. If the app is no longer running and Windows still shows
+   127.0.0.1 as DNS, start the EXE again. Startup recovery will
+   restore the saved DNS or reset the adapter to automatic DHCP
+   DNS when no usable backup exists.
+3. As a last resort, run this from an Administrator PowerShell,
+   replacing WiFi with your actual adapter name:
+
+   Set-DnsClientServerAddress -InterfaceAlias "WiFi" -ResetServerAddresses
+
+If the app cannot start, verify that:
+
+- You approved the UAC prompt.
+- Another DNS program is not already using UDP port 53.
+- Windows Application Control has not blocked the executable or
+  one of its Rust/WebView2 components.
+- Microsoft Edge WebView2 Runtime is installed for the native
+  compact panel. The DNS service can still be checked through
+  the browser dashboard if the native panel cannot open.
+
+The app actively checks upstream DNS health in the background and
+shows warnings in both the compact panel and the dashboard when
+an upstream resolver or blocklist download is unavailable.
+
+START WITH WINDOWS
+------------------
+Create a shortcut to rust_dns_firewall.exe and place it in the
+Windows Startup folder:
+
   Win+R -> shell:startup -> paste the shortcut
+
+Administrator approval may still be requested when Windows starts
+the app.
